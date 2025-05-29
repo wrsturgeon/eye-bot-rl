@@ -336,18 +336,18 @@ for i in range(N_LEGS):
     )
     XML.SubElement(sensor, "force", site=f"foot #{i + 1}", name=f"foot force #{i + 1}")
 
-    # XML.SubElement(
-    #     actuator,
-    #     "position",
-    #     name=f"upper leg servo #{i + 1}",
-    #     joint=f"upper leg joint #{i + 1}",
-    # )
-    # XML.SubElement(
-    #     actuator,
-    #     "position",
-    #     name=f"lower leg servo #{i + 1}",
-    #     joint=f"lower leg joint #{i + 1}",
-    # )
+    XML.SubElement(
+        actuator,
+        "position",
+        name=f"upper leg servo #{i + 1}",
+        joint=f"upper leg joint #{i + 1}",
+    )
+    XML.SubElement(
+        actuator,
+        "position",
+        name=f"lower leg servo #{i + 1}",
+        joint=f"lower leg joint #{i + 1}",
+    )
 
 
 XML.indent(mujoco)
