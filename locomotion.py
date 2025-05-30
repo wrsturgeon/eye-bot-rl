@@ -71,6 +71,7 @@ def progress(num_steps, metrics):
         now = datetime.now()
         print(f"Time to JIT: {now - time}")
         time = now
+        exit()
     iteration_counter += 1
     print(f"Iteration #{iteration_counter}/{consts.TRAINING_STEPS}")
 
@@ -115,6 +116,7 @@ train_fn = functools.partial(
 
 make_inference_fn, params, metrics = train_fn(
     environment=env,
+    # eval_env=env,  # registry.load(env_name, config=env_cfg),
     eval_env=registry.load(env_name, config=env_cfg),
     wrap_env_fn=wrapper.wrap_for_brax_training,
 )
