@@ -8,6 +8,7 @@ import consts
 
 # Library imports:
 from brax.training.agents.ppo import networks as ppo_networks, train as ppo
+from copy import deepcopy
 from datetime import datetime
 import functools
 from mujoco_playground import registry, wrapper
@@ -116,8 +117,7 @@ train_fn = functools.partial(
 
 make_inference_fn, params, metrics = train_fn(
     environment=env,
-    # eval_env=env,  # registry.load(env_name, config=env_cfg),
-    eval_env=registry.load(env_name, config=env_cfg),
+    eval_env=deepcopy(env),  # registry.load(env_name, config=env_cfg),
     wrap_env_fn=wrapper.wrap_for_brax_training,
 )
 print(f"time to jit: {times[1] - times[0]}")
