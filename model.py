@@ -5,14 +5,22 @@
 # <https://github.com/google-deepmind/mujoco/blob/main/model/humanoid/humanoid.xml>
 
 
+# Local imports:
+import consts
+
+# Library imports:
 import xml.etree.ElementTree as XML
 
 
-N_LEGS = 3
 GLOBAL_MULTIPLIER = 1
+
 EYE_RADIUS_INCHES = 2.0
 UPPER_LEG_LENGTH_INCHES = 2.0
 LOWER_LEG_LENGTH_INCHES = 4.0
+HIP_MIN_DEGREES = -90
+HIP_MAX_DEGREES = 90
+KNEE_MIN_DEGREES = -60
+KNEE_MAX_DEGREES = 60
 PUSH_ROD_SPACING_INCHES = 0.5
 LEG_DIAMETER_INCHES = 0.125
 LEG_WEIGHT_GRAMS = 10.0
@@ -182,7 +190,7 @@ XML.SubElement(
     "light",
     name="spotlight",
     mode="targetbodycom",
-    target="torso",
+    target=consts.ROOT_BODY,
     diffuse=".8 .8 .8",
     specular="0.3 0.3 0.3",
     pos="0 -6 4",
@@ -192,7 +200,7 @@ XML.SubElement(
 torso = XML.SubElement(
     worldbody,
     "body",
-    name="torso",
+    name=consts.ROOT_BODY,
     pos=f"0 0 {inches(4 * EYE_RADIUS_INCHES)}",
     childclass="body",
 )
@@ -243,23 +251,35 @@ contact = XML.SubElement(mujoco, "contact")
 sensor = XML.SubElement(mujoco, "sensor")
 
 XML.SubElement(sensor, "gyro", site="imu", name="gyro")
+XML.SubElement(sensor, "velocimeter", site="imu", name="local_linvel")
 XML.SubElement(sensor, "accelerometer", site="imu", name="accelerometer")
+XML.SubElement(sensor, "framepos", objtype="site", objname="imu", name="position")
+XML.SubElement(sensor, "framezaxis", objtype="site", objname="imu", name="upvector")
+XML.SubElement(
+    sensor, "framexaxis", objtype="site", objname="imu", name="forwardvector"
+)
 XML.SubElement(
     sensor, "framelinvel", objtype="site", objname="imu", name="global_linvel"
 )
 XML.SubElement(
     sensor, "frameangvel", objtype="site", objname="imu", name="global_angvel"
 )
-XML.SubElement(sensor, "framepos", objtype="site", objname="imu", name="position")
 XML.SubElement(sensor, "framequat", objtype="site", objname="imu", name="orientation")
 
 
 actuator = XML.SubElement(mujoco, "actuator")
 
 
-for i in range(N_LEGS):
+keyframe = XML.SubElement(mujoco, "keyframe")
+XML.SubElement(keyframe, "key", name="home", qpos=" ".join(["0"] * 13))
+
+
+for i in range(consts.N_LEGS):
     leg_mount = XML.SubElement(
-        torso, "body", name=f"leg mount #{i + 1}", euler=f"0 0 {360.0 * i / N_LEGS}"
+        torso,
+        "body",
+        name=f"leg mount #{i + 1}",
+        euler=f"0 0 {360.0 * i / consts.N_LEGS}",
     )
     leg = XML.SubElement(
         leg_mount,
@@ -270,9 +290,9 @@ for i in range(N_LEGS):
     XML.SubElement(
         leg,
         "joint",
-        name=f"upper leg joint #{i + 1}",
+        name=f"hip joint #{i + 1}",
         axis="0 1 0",
-        range="-90 90",
+        range=f"{HIP_MIN_DEGREES} {HIP_MAX_DEGREES}",
     )
     XML.SubElement(
         leg,
@@ -297,9 +317,9 @@ for i in range(N_LEGS):
     XML.SubElement(
         lower_leg,
         "joint",
-        name=f"lower leg joint #{i + 1}",
+        name=f"knee joint #{i + 1}",
         axis="0 1 0",
-        range="-90 90",
+        range=f"{KNEE_MIN_DEGREES} {KNEE_MAX_DEGREES}",
     )
     XML.SubElement(
         lower_leg,
@@ -327,26 +347,35 @@ for i in range(N_LEGS):
         size=f"{inches(FOOT_DIAMETER_INCHES)}",
     )
 
+    XML.SubElement(sensor, "force", site=f"foot #{i + 1}", name=f"foot force #{i + 1}")
     XML.SubElement(
         sensor,
         "framelinvel",
         objtype="site",
         objname=f"foot #{i + 1}",
-        name=f"foot linvel #{i + 1}",
+        name=f"foot #{i + 1}_global_linvel",
     )
-    XML.SubElement(sensor, "force", site=f"foot #{i + 1}", name=f"foot force #{i + 1}")
+    XML.SubElement(
+        sensor,
+        "framelinvel",
+        objtype="site",
+        objname=f"foot #{i + 1}",
+        name=f"foot #{i + 1}_pos",
+        reftype="site",
+        refname="imu",
+    )
 
     XML.SubElement(
         actuator,
         "position",
-        name=f"upper leg servo #{i + 1}",
-        joint=f"upper leg joint #{i + 1}",
+        name=f"hip servo #{i + 1}",
+        joint=f"hip joint #{i + 1}",
     )
     XML.SubElement(
         actuator,
         "position",
-        name=f"lower leg servo #{i + 1}",
-        joint=f"lower leg joint #{i + 1}",
+        name=f"knee servo #{i + 1}",
+        joint=f"knee joint #{i + 1}",
     )
 
 
