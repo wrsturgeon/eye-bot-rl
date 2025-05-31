@@ -5,6 +5,7 @@ import dependencies
 
 # Local imports:
 import consts
+from joystick import Joystick
 
 # Library imports:
 from brax.training.agents.ppo import networks as ppo_networks, train as ppo
@@ -12,6 +13,7 @@ from copy import deepcopy
 from datetime import datetime
 import functools
 from mujoco_playground import registry, wrapper
+from mujoco_playground.config import locomotion_params
 
 # from IPython.display import clear_output
 
@@ -19,17 +21,21 @@ from mujoco_playground import registry, wrapper
 ########################################
 
 
-env_name = "Go1JoystickFlatTerrain"
-env = registry.load(env_name)
-env_cfg = registry.get_default_config(env_name)
+# env_name = "Go1JoystickFlatTerrain"
+# env = registry.load(env_name)
+# env_cfg = registry.get_default_config(env_name)
+
+
+env_cfg = registry.get_default_config(consts.COMPARABLE_MUJOCO_PLAYGROUND_ENV)
+# env = registry.load(consts.COMPARABLE_MUJOCO_PLAYGROUND_ENV, config=env_cfg)
+env = Joystick(task="rough_terrain", config=env_cfg)
 
 
 ########################################
 
 
-from mujoco_playground.config import locomotion_params
-
-ppo_params = locomotion_params.brax_ppo_config(env_name)
+ppo_params = locomotion_params.brax_ppo_config(consts.COMPARABLE_MUJOCO_PLAYGROUND_ENV)
+ppo_params.num_timesteps = ppo_params.num_timesteps // 100_000_000
 ppo_params
 
 
@@ -59,7 +65,7 @@ ppo_params
 
 x_data, y_data, y_err = [], [], []
 time = datetime.now()
-iteration_counter = 1
+iteration_counter = 0
 
 
 def progress(num_steps, metrics):
@@ -68,7 +74,7 @@ def progress(num_steps, metrics):
 
     # clear_output(wait=True)
 
-    if iteration_counter == 1:
+    if iteration_counter == 0:
         now = datetime.now()
         print(f"Time to JIT: {now - time}")
         time = now
@@ -89,7 +95,7 @@ def progress(num_steps, metrics):
     # display(plt.gcf())
 
 
-# randomizer = registry.get_domain_randomizer(env_name)
+# randomizer = registry.get_domain_randomizer(consts.COMPARABLE_MUJOCO_PLAYGROUND_ENV)
 from randomizer import make_randomization_fn
 
 randomizer = make_randomization_fn(env)
@@ -115,10 +121,40 @@ train_fn = functools.partial(
 ########################################
 
 
+eval_env = deepcopy(env)
 make_inference_fn, params, metrics = train_fn(
     environment=env,
-    eval_env=deepcopy(env),  # registry.load(env_name, config=env_cfg),
+    eval_env=eval_env,
     wrap_env_fn=wrapper.wrap_for_brax_training,
 )
-print(f"time to jit: {times[1] - times[0]}")
-print(f"time to train: {times[-1] - times[1]}")
+print(f"Time to train: {datetime.now() - time}")
+
+
+trajectory = [TODO for TODO in TODO]
+print(eval_env.render(trajectory))
+# import cv2
+# import mujoco as mj
+#
+# mj_data = env._mj_data
+# mj_model = env._mj_model
+#
+# duration = 5.0  # seconds
+# fps = 60  # actual is 500
+# renderer = mj.Renderer(mj_model, SCREEN_HEIGHT, SCREEN_WIDTH)
+# video_writer = cv2.VideoWriter(
+#     "render.mp4",
+#     cv2.VideoWriter_fourcc(*"mp4v"),
+#     fps,
+#     renderer.render().shape[:2][::-1],
+# )
+# next_frame = 0.0
+#
+# while mj_data.time < duration:
+#     mj_data = step(mj_model, mj_data)
+#     if mj_data.time > next_frame:
+#         next_frame += 1.0 / fps
+#         mj_data = get_data(mj_model, mj_data)
+#         renderer.update_scene(mj_data, scene_option=scene_option)
+#         frame = renderer.render()
+#         video_writer.write(frame)
+# video_writer.release()

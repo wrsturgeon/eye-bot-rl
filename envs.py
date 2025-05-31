@@ -127,7 +127,7 @@ class EyeEnv(PipelineEnv):
         scene_file: str = "scene_mjx.xml",
         **kwargs,
     ):
-        sys = brax.io.mjcf.load("generated-mjcf.xml")
+        sys = brax.io.mjcf.load(consts.GENERATED_MJCF_XML_PATH)
         self._dt = 0.02  # this environment is 50 fps
         # sys = sys.tree_replace({"opt.timestep": 0.004})
         #

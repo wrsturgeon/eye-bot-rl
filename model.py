@@ -380,5 +380,5 @@ for i in range(consts.N_LEGS):
 
 
 XML.indent(mujoco)
-with open("generated-mjcf.xml", "wb") as file:
+with open(consts.GENERATED_MJCF_XML_PATH, "wb") as file:
     XML.ElementTree(mujoco).write(file, encoding="utf-8")

@@ -89,7 +89,7 @@ class Env(mjx_env.MjxEnv):
         super().__init__(config)
 
         self._mj_model = MjModel.from_xml_path(
-            "generated-mjcf.xml", assets=get_assets()
+            consts.GENERATED_MJCF_XML_PATH, assets=get_assets()
         )
         self._mj_model.opt.timestep = self._config.sim_dt
 

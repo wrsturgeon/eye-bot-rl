@@ -6,6 +6,7 @@ from mujoco_playground._src import mjx_env
 
 N_LEGS = 3
 COMPARABLE_MUJOCO_PLAYGROUND_ENV = "Go1JoystickRoughTerrain"
+GENERATED_MJCF_XML_PATH = "generated-mjcf.xml"
 TRAINING_STEPS = 1_000_000
 
 ROOT_PATH = mjx_env.ROOT_PATH / "locomotion" / "go1"

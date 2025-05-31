@@ -33,7 +33,7 @@ env = brax.envs.get_environment("eye")
 batched_sys, _ = envs.domain_randomize(env.sys, rng)
 
 
-mj_model = mj.MjModel.from_xml_path("generated-mjcf.xml")
+mj_model = mj.MjModel.from_xml_path(consts.GENERATED_MJCF_XML_PATH)
 mj_model.opt.solver = mj.mjtSolver.mjSOL_CG
 mj_model.opt.iterations = 6
 mj_model.opt.ls_iterations = 6

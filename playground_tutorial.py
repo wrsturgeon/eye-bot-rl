@@ -47,7 +47,7 @@ env = make_env()
 
 # x_data, y_data, y_err = [], [], []
 # time = datetime.now()
-# iteration_counter = 1
+# iteration_counter = 0
 #
 #
 # def progress(num_steps, metrics):
@@ -56,7 +56,7 @@ env = make_env()
 #
 #     clear_output(wait=True)
 #
-#     if iteration_counter == 1:
+#     if iteration_counter == 0:
 #         now = datetime.now()
 #         print(f"Time to JIT: {now - time}")
 #         time = now

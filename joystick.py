@@ -10,7 +10,7 @@ from jax import numpy as jp
 from ml_collections.config_dict import ConfigDict
 from mujoco import mjx
 from mujoco.mjx._src import math
-from mujoco_playground._src import mjx_env
+from mujoco_playground._src import collision, mjx_env
 import numpy as np
 from typing import Any, Dict
 
