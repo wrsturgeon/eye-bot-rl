@@ -374,65 +374,14 @@ print(f"time to jit: {times[1] - times[0]}")
 print(f"time to train: {times[-1] - times[1]}")
 
 
-
-
-
-
-
-
-
-
-
 ################################################################################################################################
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-model_path = './mjx_brax_policy'
+model_path = "./mjx_brax_policy"
 model.save_params(model_path, params)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 ################################################################################################################################
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 params = model.load_params(model_path)
@@ -441,18 +390,7 @@ inference_fn = make_inference_fn(params)
 jit_inference_fn = jax.jit(inference_fn)
 
 
-
-
-
-
-
-
-
 ################################################################################################################################
-
-
-
-
 
 
 eval_env = envs.get_environment(env_name)
@@ -461,18 +399,7 @@ jit_reset = jax.jit(eval_env.reset)
 jit_step = jax.jit(eval_env.step)
 
 
-
-
-
-
-
-
-
 ################################################################################################################################
-
-
-
-
 
 
 # initialize the state
@@ -485,44 +412,20 @@ n_steps = 500
 render_every = 2
 
 for i in range(n_steps):
-  act_rng, rng = jax.random.split(rng)
-  ctrl, _ = jit_inference_fn(state.obs, act_rng)
-  state = jit_step(state, ctrl)
-  rollout.append(state.pipeline_state)
+    act_rng, rng = jax.random.split(rng)
+    ctrl, _ = jit_inference_fn(state.obs, act_rng)
+    state = jit_step(state, ctrl)
+    rollout.append(state.pipeline_state)
 
-  if state.done:
-    break
+    if state.done:
+        break
 
-media.show_video(env.render(rollout[::render_every], camera='side'), fps=1.0 / env.dt / render_every)
-
-
-
-
-
-
-
-
-
+media.show_video(
+    env.render(rollout[::render_every], camera="side"), fps=1.0 / env.dt / render_every
+)
 
 
 ################################################################################################################################
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 mj_model = eval_env.sys.mj_model
@@ -533,17 +436,17 @@ ctrl = jp.zeros(mj_model.nu)
 
 images = []
 for i in range(n_steps):
-  act_rng, rng = jax.random.split(rng)
+    act_rng, rng = jax.random.split(rng)
 
-  obs = eval_env._get_obs(mjx.put_data(mj_model, mj_data), ctrl)
-  ctrl, _ = jit_inference_fn(obs, act_rng)
+    obs = eval_env._get_obs(mjx.put_data(mj_model, mj_data), ctrl)
+    ctrl, _ = jit_inference_fn(obs, act_rng)
 
-  mj_data.ctrl = ctrl
-  for _ in range(eval_env._n_frames):
-    mujoco.mj_step(mj_model, mj_data)  # Physics step using MuJoCo mj_step.
+    mj_data.ctrl = ctrl
+    for _ in range(eval_env._n_frames):
+        mujoco.mj_step(mj_model, mj_data)  # Physics step using MuJoCo mj_step.
 
-  if i % render_every == 0:
-    renderer.update_scene(mj_data, camera='side')
-    images.append(renderer.render())
+    if i % render_every == 0:
+        renderer.update_scene(mj_data, camera="side")
+        images.append(renderer.render())
 
 media.show_video(images, fps=1.0 / eval_env.dt / render_every)
