@@ -1,23 +1,26 @@
-# import dependencies
+import dependencies
+
+print("Defining constants...")
 
 # Library imports:
 from etils import epath
-from mujoco_playground._src import mjx_env
+
+# from mujoco_playground._src import mjx_env
 
 N_LEGS = 3
 COMPARABLE_MUJOCO_PLAYGROUND_ENV = "Go1JoystickRoughTerrain"
 GENERATED_MJCF_XML_PATH = "generated-mjcf.xml"
 TRAINING_STEPS = 1_000_000
 
-ROOT_PATH = mjx_env.ROOT_PATH / "locomotion" / "go1"
-FEET_ONLY_FLAT_TERRAIN_XML = ROOT_PATH / "xmls" / "scene_mjx_feetonly_flat_terrain.xml"
-FEET_ONLY_ROUGH_TERRAIN_XML = (
-    ROOT_PATH / "xmls" / "scene_mjx_feetonly_rough_terrain.xml"
-)
-FULL_FLAT_TERRAIN_XML = ROOT_PATH / "xmls" / "scene_mjx_flat_terrain.xml"
-FULL_COLLISIONS_FLAT_TERRAIN_XML = (
-    ROOT_PATH / "xmls" / "scene_mjx_fullcollisions_flat_terrain.xml"
-)
+# ROOT_PATH = mjx_env.ROOT_PATH / "locomotion" / "go1"
+# FEET_ONLY_FLAT_TERRAIN_XML = ROOT_PATH / "xmls" / "scene_mjx_feetonly_flat_terrain.xml"
+# FEET_ONLY_ROUGH_TERRAIN_XML = (
+#     ROOT_PATH / "xmls" / "scene_mjx_feetonly_rough_terrain.xml"
+# )
+# FULL_FLAT_TERRAIN_XML = ROOT_PATH / "xmls" / "scene_mjx_flat_terrain.xml"
+# FULL_COLLISIONS_FLAT_TERRAIN_XML = (
+#     ROOT_PATH / "xmls" / "scene_mjx_fullcollisions_flat_terrain.xml"
+# )
 
 
 def task_to_xml(task_name: str) -> epath.Path:

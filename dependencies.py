@@ -56,15 +56,15 @@ except ModuleNotFoundError:
     )
     exit(1)
 
-print("Importing MuJoCo Playground...")
-try:
-    import mujoco_playground
-except ModuleNotFoundError:
-    print(
-        "ERROR: MuJoCo Playground is not installed. It's installable via `pip` as `playground`.",
-        file=stderr,
-    )
-    exit(1)
+# print("Importing MuJoCo Playground...")
+# try:
+#     import mujoco_playground
+# except ModuleNotFoundError:
+#     print(
+#         "ERROR: MuJoCo Playground is not installed. It's installable via `pip` as `playground`.",
+#         file=stderr,
+#     )
+#     exit(1)
 
 print("Importing MediaPy...")
 try:
@@ -74,7 +74,17 @@ except ModuleNotFoundError:
         "ERROR: MediaPy is not installed. It's installable via `pip` as `mediapy`.",
         file=stderr,
     )
-    exit(1)
+    # exit(1)
+
+print("Importing MatPlotLib...")
+try:
+    import matplotlib.pyplot as plt
+except ModuleNotFoundError:
+    print(
+        "ERROR: MatPlotLib is not installed. It's installable via `pip` as `matplotlib`.",
+        file=stderr,
+    )
+    # exit(1)
 
 print("Generating an MJCF XML file...")
 import model
