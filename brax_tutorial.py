@@ -74,10 +74,20 @@ except ModuleNotFoundError:
 
 print("Importing MediaPy...")
 try:
-    import mediapy
+    import mediapy as media
 except ModuleNotFoundError:
     print(
         "ERROR: MediaPy is not installed. It's installable via `pip` as `mediapy`.",
+        file=stderr,
+    )
+    exit(1)
+
+print("Importing MatPlotLib...")
+try:
+    import matplotlib.pyplot as plt
+except ModuleNotFoundError:
+    print(
+        "ERROR: MatPlotLib is not installed. It's installable via `pip` as `matplotlib`.",
         file=stderr,
     )
     exit(1)
