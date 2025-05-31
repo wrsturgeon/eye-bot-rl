@@ -68,7 +68,7 @@ except ModuleNotFoundError:
 
 print("Importing MediaPy...")
 try:
-    import mediapy
+    import mediapy as media
 except ModuleNotFoundError:
     print(
         "ERROR: MediaPy is not installed. It's installable via `pip` as `mediapy`.",
