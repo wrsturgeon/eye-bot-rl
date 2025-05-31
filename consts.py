@@ -1,4 +1,4 @@
-import dependencies
+# import dependencies
 
 # Library imports:
 from etils import epath
@@ -42,3 +42,43 @@ GLOBAL_ANGVEL_SENSOR = "global_angvel"
 LOCAL_LINVEL_SENSOR = "local_linvel"
 ACCELEROMETER_SENSOR = "accelerometer"
 GYRO_SENSOR = "gyro"
+
+
+def inches(murica):
+    return murica * 0.0254
+
+
+def grams(g):
+    return g * 0.001
+
+
+def kg_cm(torque):
+    return torque * 0.0980665
+
+
+EYE_RADIUS = inches(2.0)
+UPPER_LEG_LENGTH = inches(2.0)
+LOWER_LEG_LENGTH = inches(4.0)
+
+HIP_MIN_DEGREES = -90
+HIP_MAX_DEGREES = 90
+KNEE_MIN_DEGREES = -60
+KNEE_MAX_DEGREES = 60
+LEG_YAW_MIN_DEGREES = -30
+LEG_YAW_MAX_DEGREES = 30
+
+PUSH_ROD_SPACING = inches(0.5)
+LEG_DIAMETER = inches(0.05)
+FOOT_DIAMETER = inches(0.25)
+KNEE_DIAMETER = LEG_DIAMETER * 1.5
+
+LEG_DENSITY = grams(1.0) / inches(1.0)
+SPHERE_MASS = grams(10.0)
+SERVO_MASS = grams(19.0)
+FOOT_CAP_MASS = grams(1.0)
+EXTRA_SPHERE_MASS_PERCENTAGE_IM_FORGETTING = 0.1
+
+PUPIL_SIZE_RELATIVE = None  # 0.75
+PUPIL_SIZE_PROTRUSION = 0.05
+
+SERVO_TORQUE_NM = kg_cm(2.7)

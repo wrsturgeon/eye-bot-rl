@@ -1,12 +1,89 @@
 #!/usr/bin/env python3
 
-# Based on <https://colab.research.google.com/github/google-deepmind/mujoco/blob/main/mjx/tutorial.ipynb>
+################################################################################################################################
 
+# Based on [https://colab.research.google.com/github/google-deepmind/mujoco/blob/main/mjx/tutorial.ipynb](this Brax tutorial).
 
 ################################################################################################################################
 
+from sys import stderr
 
-import dependencies
+print("Importing NumPy...")
+try:
+    import numpy as np
+
+    np.set_printoptions(precision=3, suppress=True, linewidth=100)
+except ModuleNotFoundError:
+    print(
+        "ERROR: NumPy is not installed. It's installable via `pip` as `numpy`.",
+        file=stderr,
+    )
+    exit(1)
+
+print("Importing JAX...")
+try:
+    import jax
+
+    jax.numpy.set_printoptions(precision=3, suppress=True, linewidth=100)
+except ModuleNotFoundError:
+    print(
+        "ERROR: JAX is not installed. It's installable at `https://docs.jax.dev/en/latest/quickstart.html`.",
+        file=stderr,
+    )
+    exit(1)
+
+print("Importing MuJoCo...")
+try:
+    import mujoco
+except ModuleNotFoundError:
+    print(
+        "ERROR: MuJoCo is not installed. It's installable via `pip` as `mujoco`.",
+        file=stderr,
+    )
+    exit(1)
+
+print("Importing MJX...")
+try:
+    from mujoco import mjx
+except ModuleNotFoundError:
+    print(
+        "ERROR: MJX (JAX rewrite of MuJoCo) is not installed. It's installable via `pip` as `mujoco_mjx`.",
+        file=stderr,
+    )
+    exit(1)
+
+print("Importing Brax...")
+try:
+    import brax
+except ModuleNotFoundError:
+    print(
+        "ERROR: Brax is not installed. It's installable via `pip` as `brax`.",
+        file=stderr,
+    )
+    exit(1)
+
+print("Importing MuJoCo Playground...")
+try:
+    import mujoco_playground
+except ModuleNotFoundError:
+    print(
+        "ERROR: MuJoCo Playground is not installed. It's installable via `pip` as `playground`.",
+        file=stderr,
+    )
+    exit(1)
+
+print("Importing MediaPy...")
+try:
+    import mediapy
+except ModuleNotFoundError:
+    print(
+        "ERROR: MediaPy is not installed. It's installable via `pip` as `mediapy`.",
+        file=stderr,
+    )
+    exit(1)
+
+print("Generating an MJCF XML file...")
+import model
 
 
 ################################################################################################################################
@@ -18,7 +95,7 @@ import consts
 print("Library imports...")
 from brax import envs
 from brax.envs.base import PipelineEnv, State
-from brax.io import mjcf
+from brax.io import mjcf, model
 from brax.training.agents.ppo import train as ppo
 import cv2
 from datetime import datetime
@@ -49,71 +126,71 @@ mjx_data = mjx.put_data(mj_model, mj_data)
 ################################################################################################################################
 
 
-# # enable joint visualization option:
-# print("Visualing with MuJoCo...")
-# scene_option = mujoco.MjvOption()
-# scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
-#
-# duration = 3.8  # (seconds)
-# framerate = 60  # (Hz)
-#
-# video_filename = "mj.mp4"
-# frames = []
-# video_writer = cv2.VideoWriter(
-#     video_filename,
-#     cv2.VideoWriter_fourcc(*"mp4v"),
-#     framerate,
-#     renderer.render().shape[:2][::-1],
-# )
-# mujoco.mj_resetData(mj_model, mj_data)
-# while mj_data.time < duration:
-#     mujoco.mj_step(mj_model, mj_data)
-#     if len(frames) < mj_data.time * framerate:
-#         renderer.update_scene(mj_data, scene_option=scene_option)
-#         pixels = renderer.render()
-#         frames.append(pixels)
-#         video_writer.write(pixels)
-# video_writer.release()
-#
-# # Simulate and display video.
-# try:
-#     media.show_video(frames, fps=framerate)
-# except:
-#     print("`media` failed. If you're not in a Jupyter notebook, this is expected.")
-# del frames
+# enable joint visualization option:
+print("Visualing with MuJoCo...")
+scene_option = mujoco.MjvOption()
+scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
+
+duration = 3.8  # (seconds)
+framerate = 60  # (Hz)
+
+video_filename = "mj.mp4"
+frames = []
+video_writer = cv2.VideoWriter(
+    video_filename,
+    cv2.VideoWriter_fourcc(*"mp4v"),
+    framerate,
+    renderer.render().shape[:2][::-1],
+)
+mujoco.mj_resetData(mj_model, mj_data)
+while mj_data.time < duration:
+    mujoco.mj_step(mj_model, mj_data)
+    if len(frames) < mj_data.time * framerate:
+        renderer.update_scene(mj_data, scene_option=scene_option)
+        pixels = renderer.render()
+        frames.append(pixels)
+        video_writer.write(pixels)
+video_writer.release()
+
+# Simulate and display video.
+try:
+    media.show_video(frames, fps=framerate)
+except:
+    print("`media` failed. If you're not in a Jupyter notebook, this is expected.")
+del frames
 
 
 ################################################################################################################################
 
 
-# print("Visualing with MJX...")
-# jit_step = jax.jit(mjx.step)
-#
-# video_filename = "mjx.mp4"
-# frames = []
-# video_writer = cv2.VideoWriter(
-#     video_filename,
-#     cv2.VideoWriter_fourcc(*"mp4v"),
-#     framerate,
-#     renderer.render().shape[:2][::-1],
-# )
-# mujoco.mj_resetData(mj_model, mj_data)
-# mjx_data = mjx.put_data(mj_model, mj_data)
-# while mjx_data.time < duration:
-#     mjx_data = jit_step(mjx_model, mjx_data)
-#     if len(frames) < mjx_data.time * framerate:
-#         mj_data = mjx.get_data(mj_model, mjx_data)
-#         renderer.update_scene(mj_data, scene_option=scene_option)
-#         pixels = renderer.render()
-#         frames.append(pixels)
-#         video_writer.write(pixels)
-# video_writer.release()
-#
-# try:
-#     media.show_video(frames, fps=framerate)
-# except:
-#     print("`media` failed. If you're not in a Jupyter notebook, this is expected.")
-# del frames
+print("Visualing with MJX...")
+jit_step = jax.jit(mjx.step)
+
+video_filename = "mjx.mp4"
+frames = []
+video_writer = cv2.VideoWriter(
+    video_filename,
+    cv2.VideoWriter_fourcc(*"mp4v"),
+    framerate,
+    renderer.render().shape[:2][::-1],
+)
+mujoco.mj_resetData(mj_model, mj_data)
+mjx_data = mjx.put_data(mj_model, mj_data)
+while mjx_data.time < duration:
+    mjx_data = jit_step(mjx_model, mjx_data)
+    if len(frames) < mjx_data.time * framerate:
+        mj_data = mjx.get_data(mj_model, mjx_data)
+        renderer.update_scene(mj_data, scene_option=scene_option)
+        pixels = renderer.render()
+        frames.append(pixels)
+        video_writer.write(pixels)
+video_writer.release()
+
+try:
+    media.show_video(frames, fps=framerate)
+except:
+    print("`media` failed. If you're not in a Jupyter notebook, this is expected.")
+del frames
 
 
 ################################################################################################################################
@@ -151,7 +228,6 @@ class Humanoid(PipelineEnv):
         ctrl_cost_weight=0.1,
         healthy_reward=5.0,
         terminate_when_unhealthy=True,
-        healthy_z_range=(1.0, 2.0),
         reset_noise_scale=1e-2,
         exclude_current_positions_from_observation=True,
         **kwargs,
@@ -174,7 +250,6 @@ class Humanoid(PipelineEnv):
         self._ctrl_cost_weight = ctrl_cost_weight
         self._healthy_reward = healthy_reward
         self._terminate_when_unhealthy = terminate_when_unhealthy
-        self._healthy_z_range = healthy_z_range
         self._reset_noise_scale = reset_noise_scale
         self._exclude_current_positions_from_observation = (
             exclude_current_positions_from_observation
@@ -217,9 +292,7 @@ class Humanoid(PipelineEnv):
         velocity = (com_after - com_before) / self.dt
         forward_reward = self._forward_reward_weight * velocity[0]
 
-        min_z, max_z = self._healthy_z_range
-        is_healthy = jp.where(data.q[2] < min_z, 0.0, 1.0)
-        is_healthy = jp.where(data.q[2] > max_z, 0.0, is_healthy)
+        is_healthy = jp.where(data.q[2] < consts.EYE_RADIUS, 0.0, 1.0)
         if self._terminate_when_unhealthy:
             healthy_reward = self._healthy_reward
         else:
@@ -342,13 +415,19 @@ train_fn = functools.partial(
 x_data = []
 y_data = []
 ydataerr = []
-times = [datetime.now()]
+start_time = datetime.now()
+jit_time = None
 
 max_y, min_y = 13000, 0
 
 
 def progress(num_steps, metrics):
-    times.append(datetime.now())
+    global jit_time
+
+    if jit_time is None:
+        jit_time = datetime.now()
+        print(f"Time to JIT: {jit_time - start_time}")
+
     x_data.append(num_steps)
     y_data.append(metrics["eval/episode_reward"])
     ydataerr.append(metrics["eval/episode_reward_std"])
@@ -370,8 +449,7 @@ def progress(num_steps, metrics):
 print("Training...")
 make_inference_fn, params, _ = train_fn(environment=env, progress_fn=progress)
 
-print(f"time to jit: {times[1] - times[0]}")
-print(f"time to train: {times[-1] - times[1]}")
+print(f"Time to train (after JIT-compiling): {datetime.now() - jit_time}")
 
 
 ################################################################################################################################
@@ -420,9 +498,13 @@ for i in range(n_steps):
     if state.done:
         break
 
-media.show_video(
-    env.render(rollout[::render_every], camera="side"), fps=1.0 / env.dt / render_every
-)
+try:
+    media.show_video(
+        env.render(rollout[::render_every], camera="side"),
+        fps=1.0 / env.dt / render_every,
+    )
+except:
+    print("`media` failed. If you're not in a Jupyter notebook, this is expected.")
 
 
 ################################################################################################################################
@@ -449,4 +531,7 @@ for i in range(n_steps):
         renderer.update_scene(mj_data, camera="side")
         images.append(renderer.render())
 
-media.show_video(images, fps=1.0 / eval_env.dt / render_every)
+try:
+    media.show_video(images, fps=1.0 / eval_env.dt / render_every)
+except:
+    print("`media` failed. If you're not in a Jupyter notebook, this is expected.")
