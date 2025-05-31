@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# Based on <https://colab.research.google.com/github/google-deepmind/mujoco/blob/main/mjx/tutorial.ipynb>
+
 
 ################################################################################################################################
 
