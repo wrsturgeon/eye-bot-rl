@@ -76,7 +76,7 @@ while mj_data.time < duration:
         renderer.update_scene(mj_data, scene_option=scene_option)
         pixels = renderer.render()
         frames.append(pixels)
-        video_writer.write(pixels)
+        video_writer.write(pixels[..., ::-1])
 video_writer.release()
 
 # Simulate and display video.
@@ -110,7 +110,7 @@ while mjx_data.time < duration:
         renderer.update_scene(mj_data, scene_option=scene_option)
         pixels = renderer.render()
         frames.append(pixels)
-        video_writer.write(pixels)
+        video_writer.write(pixels[..., ::-1])
 video_writer.release()
 
 try:
@@ -296,7 +296,7 @@ for i in range(10):
     rollout.append(state.pipeline_state)
 
 print("Visualizing that trajectory...")
-trajectory_visualized = env.render(rollout, camera="side")
+trajectory_visualized = env.render(rollout)
 framerate = int(1.0 / env.dt)
 try:
     media.show_video(trajectory_visualized, fps=framerate)
@@ -310,7 +310,7 @@ video_writer = cv2.VideoWriter(
     trajectory_visualized[0].shape[:2][::-1],
 )
 for pixels in trajectory_visualized:
-    video_writer.write(pixels)
+    video_writer.write(pixels[..., ::-1])
 video_writer.release()
 del trajectory_visualized
 
@@ -430,7 +430,7 @@ for i in range(n_steps):
 
 try:
     media.show_video(
-        env.render(rollout[::render_every], camera="side"),
+        env.render(rollout[::render_every]),
         fps=1.0 / env.dt / render_every,
     )
 except:
@@ -458,7 +458,7 @@ for i in range(n_steps):
         mujoco.mj_step(mj_model, mj_data)  # Physics step using MuJoCo mj_step.
 
     if i % render_every == 0:
-        renderer.update_scene(mj_data, camera="side")
+        renderer.update_scene(mj_data)
         images.append(renderer.render())
 
 try:
