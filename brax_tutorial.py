@@ -321,7 +321,7 @@ del trajectory_visualized
 print("Setting up a training loop...")
 train_fn = functools.partial(
     ppo.train,
-    num_timesteps=20_000_000 // 20_000_000,
+    num_timesteps=20_000_000,
     num_evals=5,
     reward_scaling=0.1,
     episode_length=1000,
