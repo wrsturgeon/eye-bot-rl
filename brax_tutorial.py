@@ -219,7 +219,7 @@ class Humanoid(PipelineEnv):
         velocity = (com_after - com_before) / self.dt
         forward_reward = self._forward_reward_weight * velocity[0]
 
-        is_healthy = jp.where(data.q[2] < consts.EYE_RADIUS, 0.0, 1.0)
+        is_healthy = jp.where(data.q[2] < consts.SPHERE_RADIUS, 0.0, 1.0)
         if self._terminate_when_unhealthy:
             healthy_reward = self._healthy_reward
         else:

@@ -86,5 +86,4 @@ except ModuleNotFoundError:
     )
     # exit(1)
 
-print("Generating an MJCF XML file...")
 import model

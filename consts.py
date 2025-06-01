@@ -1,5 +1,3 @@
-import dependencies
-
 print("Defining constants...")
 
 # Library imports:
@@ -9,6 +7,8 @@ from etils import epath
 
 N_LEGS = 3
 COMPARABLE_MUJOCO_PLAYGROUND_ENV = "Go1JoystickRoughTerrain"
+GENERATED_ROBOT_MJCF_XML_PATH = "generated-robot-mjcf.xml"
+GENERATED_SCENE_MJCF_XML_PATH = "generated-scene-mjcf.xml"
 GENERATED_MJCF_XML_PATH = "generated-mjcf.xml"
 TRAINING_STEPS = 1_000_000
 
@@ -59,9 +59,9 @@ def kg_cm(torque):
     return torque * 0.0980665
 
 
-EYE_RADIUS = inches(2.0)
-UPPER_LEG_LENGTH = inches(2.0)
-LOWER_LEG_LENGTH = inches(4.0)
+SPHERE_RADIUS = inches(2.0)
+LENGTH_HIP_TO_KNEE = inches(2.0)
+LENGTH_KNEE_TO_FOOT = inches(4.0)
 
 HIP_MIN_DEGREES = -90
 HIP_MAX_DEGREES = 90
@@ -71,9 +71,9 @@ LEG_YAW_MIN_DEGREES = -30
 LEG_YAW_MAX_DEGREES = 30
 
 PUSH_ROD_SPACING = inches(0.5)
-LEG_DIAMETER = inches(0.05)
-FOOT_DIAMETER = inches(0.25)
-KNEE_DIAMETER = LEG_DIAMETER * 1.5
+LEG_RADIUS = inches(0.1)
+FOOT_RADIUS = inches(0.125)
+KNEE_RADIUS = LEG_RADIUS * 1.5
 
 LEG_DENSITY = grams(1.0) / inches(1.0)
 SPHERE_MASS = grams(10.0)
@@ -84,4 +84,11 @@ EXTRA_SPHERE_MASS_PERCENTAGE_IM_FORGETTING = 0.1
 PUPIL_SIZE_RELATIVE = None  # 0.75
 PUPIL_SIZE_PROTRUSION = 0.05
 
-SERVO_TORQUE_NM = 10 * kg_cm(2.7)
+SERVO_TORQUE_NM = 5  # kg_cm(2.7)
+SERVO_KP = 21.1  # from <https://github.com/google-deepmind/mujoco/issues/1075>: see line <https://github.com/google-deepmind/mujoco_menagerie/blob/cfd91c5605e90f0b77860ae2278ff107366acc87/robotis_op3/op3.xml#L62>
+
+JOINT_SHITBALLS = 1
+JOINT_DAMPING = 1.084 / JOINT_SHITBALLS  # 1.084
+JOINT_STIFFNESS = None
+JOINT_ARMATURE = 0.045 / JOINT_SHITBALLS  # 0.045
+JOINT_FRICTION_LOSS = 0.03 / JOINT_SHITBALLS  # 0.03

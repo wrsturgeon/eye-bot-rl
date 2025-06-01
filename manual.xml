@@ -1,0 +1,46 @@
+<!-- Based on <https://github.com/google-deepmind/mujoco_menagerie/blob/cfd91c5605e90f0b77860ae2278ff107366acc87/robotis_op3/op3.xml> -->
+
+<mujoco model="eye">
+    <compiler autolimits="true"/>
+
+    <asset>
+        <material name="black" rgba="0.2 0.2 0.2 1"/>
+    </asset>
+
+    <default>
+        <geom type="capsule" solref="0.004 1"/>
+        <joint damping="1.084" armature="0.045" frictionloss="0.03"/>
+        <site group="5" type="sphere"/>
+        <position kp="21.1" ctrlrange="-90 90" forcerange="-5 5"/>
+
+        <default class="collision">
+            <geom group="3"/>
+            <default class="foot">
+                <geom mass="0" type="box"/>
+            </default>
+        </default>
+
+        <default class="visual">
+            <geom material="black" contype="0" conaffinity="0" group="2"/>
+        </default>
+    </default>
+
+    <worldbody>
+        <light mode="targetbodycom" target="body_link" pos="4 0 1"/>
+
+        <body name="body_link" pos="0 0 0.3">
+            <freejoint/>
+
+            <!-- ETC -->
+        </body>
+    </worldbody>
+
+    <contact>
+        <exclude body1="l_hip_yaw_link" body2="l_hip_pitch_link"/>
+        <exclude body1="r_hip_yaw_link" body2="r_hip_pitch_link"/>
+    </contact>
+
+    <actuator>
+        <position name="head_pan_act" joint="head_pan"/>
+    </actuator>
+</mujoco>

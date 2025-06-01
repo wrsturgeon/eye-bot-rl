@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 
-# Written to parameterize the model and output XML inspired by this handwritten XML spec:
-# <https://github.com/google-deepmind/mujoco/blob/main/model/humanoid/humanoid.xml>
+# Based on the ROBOTIS op3 spec: <https://github.com/google-deepmind/mujoco_menagerie/blob/main/robotis_op3/op3.xml>
 
 
 # Local imports:
@@ -12,395 +11,264 @@ import consts
 import xml.etree.ElementTree as XML
 
 
-# Top-level declaration (structured like a Russian nesting doll):
-mujoco = XML.Element("mujoco", model="Eye")
+print("Generating MJCF XML files...")
 
-# Simulation refresh rate:
-option = XML.SubElement(
-    mujoco,
-    "option",
-    timestep="0.001",
-    gravity="0 0 -9.80665",  # iterations="100",
-)
-XML.SubElement(option, "flag", eulerdamp="disable")
 
-# Graphics/screen/video display options:
-visual = XML.SubElement(mujoco, "visual")
+# Top-level robot declaration:
+robot = XML.Element("mujoco", model="eye-robot")
 
-# 2560x1440 display:
+
+# Robot defaults:
+default = XML.SubElement(robot, "default")
+
 XML.SubElement(
-    visual,
-    "global",
-    offwidth="2560",
-    offheight="1440",
-    elevation="-20",
-    azimuth="120",
+    default,
+    "geom",
+    type="capsule",
+    size=f"{consts.LEG_RADIUS}",
+    solref=".004 1",
+    contype="0",
+    conaffinity="0",
 )
 
-# Not sure what this does yet, but I'd guess it does something to the camera:
-XML.SubElement(visual, "map", force="0.1", zfar="16")
+joint_kwargs = dict()
+if consts.JOINT_DAMPING is not None:
+    joint_kwargs["damping"] = f"{consts.JOINT_DAMPING}"
+if consts.JOINT_STIFFNESS is not None:
+    joint_kwargs["stiffness"] = f"{consts.JOINT_STIFFNESS}"
+if consts.JOINT_ARMATURE is not None:
+    joint_kwargs["armature"] = f"{consts.JOINT_ARMATURE}"
+if consts.JOINT_FRICTION_LOSS is not None:
+    joint_kwargs["frictionloss"] = f"{consts.JOINT_FRICTION_LOSS}"
+XML.SubElement(default, "joint", **joint_kwargs)
+del joint_kwargs
 
-# Far-away haze:
-XML.SubElement(visual, "rgba", haze="0.25 0.25 0.25 1")
+XML.SubElement(
+    default,
+    "position",
+    kp=f"{consts.SERVO_KP}",
+    forcerange=f"{-consts.SERVO_TORQUE_NM} {consts.SERVO_TORQUE_NM}",
+)
 
-# What point should the camera focus on?
-XML.SubElement(mujoco, "statistic", center=f"0 0 {consts.LOWER_LEG_LENGTH}")
 
-# Define ambient textures:
-asset = XML.SubElement(mujoco, "asset")
+# Top-level declaration for physical objects:
+worldbody = XML.SubElement(robot, "worldbody")
+
+root = XML.SubElement(
+    worldbody, "body", name=consts.ROOT_BODY, pos=f"0 0 {consts.LENGTH_KNEE_TO_FOOT}"
+)
+
+XML.SubElement(root, "freejoint")
+
+sphere = XML.SubElement(root, "body", name="sphere")
+XML.SubElement(
+    sphere,
+    "geom",
+    name="sphere",
+    type="sphere",
+    size=f"{consts.SPHERE_RADIUS}",
+    rgba="1 1 1 1",
+    mass=f"{(consts.SPHERE_MASS + 9 * consts.SERVO_MASS) * (1.0 + consts.EXTRA_SPHERE_MASS_PERCENTAGE_IM_FORGETTING)}",
+)
+XML.SubElement(
+    sphere,
+    "site",
+    name="imu",
+)
+
+
+contact = XML.SubElement(robot, "contact")
+actuator = XML.SubElement(robot, "actuator")
+
+
+sensor = XML.SubElement(robot, "sensor")
+XML.SubElement(sensor, "gyro", site="imu", name="gyro")
+XML.SubElement(sensor, "accelerometer", site="imu", name="accelerometer")
+
+
+for i in range(0, consts.N_LEGS):
+    leg_mount_to_center = XML.SubElement(
+        root,
+        "body",
+        name=f"leg_{i}_mount_to_center",
+        euler=f"0 0 {360 * i / consts.N_LEGS}",
+    )
+    leg_mount = XML.SubElement(
+        leg_mount_to_center,
+        "body",
+        name=f"leg_{i}_mount",
+        pos=f"{0.5 * consts.SPHERE_RADIUS} 0 0",
+    )
+    leg = XML.SubElement(leg_mount, "body", name=f"leg_{i}")
+    XML.SubElement(leg, "joint", axis="0 1 0", name=f"leg_{i}_hip_joint")
+    XML.SubElement(leg, "joint", axis="0 0 1", name=f"leg_{i}_yaw_joint")
+    hip_to_knee = XML.SubElement(
+        leg,
+        "geom",
+        name=f"leg_{i}_hip_to_knee",
+        fromto=f"0 0 0 {consts.LENGTH_HIP_TO_KNEE} 0 0",
+        mass=f"{consts.LEG_DENSITY * consts.LENGTH_HIP_TO_KNEE}",
+        rgba="1 0 0 1",
+    )
+    lower_leg = XML.SubElement(
+        leg,
+        "body",
+        name=f"leg_{i}_lower",
+        pos=f"{consts.LENGTH_HIP_TO_KNEE} 0 0",
+        euler="0 90 0",
+    )
+    XML.SubElement(lower_leg, "joint", axis="0 1 0", name=f"leg_{i}_knee_joint")
+    knee_to_foot = XML.SubElement(
+        lower_leg,
+        "geom",
+        name=f"leg_{i}_knee_to_foot",
+        fromto=f"0 0 0 {consts.LENGTH_KNEE_TO_FOOT} 0 0",
+        mass=f"{consts.LEG_DENSITY * consts.LENGTH_HIP_TO_KNEE}",
+        rgba="1 0 0 1",
+    )
+    foot = XML.SubElement(
+        lower_leg,
+        "body",
+        name=f"leg_{i}_foot",
+        pos=f"{consts.LENGTH_KNEE_TO_FOOT} 0 0",
+    )
+    XML.SubElement(
+        foot,
+        "geom",
+        type="sphere",
+        size=f"{consts.FOOT_RADIUS}",
+        name=f"leg_{i}_foot",
+        mass=f"{consts.FOOT_CAP_MASS}",
+        rgba="1 0 0 1",
+    )
+    XML.SubElement(
+        foot,
+        "site",
+        name=f"leg_{i}_foot",
+    )
+
+    XML.SubElement(contact, "pair", geom1=f"leg_{i}_foot", geom2="floor")
+
+    XML.SubElement(
+        actuator, "position", name=f"leg_{i}_hip_joint", joint=f"leg_{i}_hip_joint"
+    )
+    XML.SubElement(
+        actuator, "position", name=f"leg_{i}_knee_joint", joint=f"leg_{i}_knee_joint"
+    )
+    XML.SubElement(
+        actuator, "position", name=f"leg_{i}_yaw_joint", joint=f"leg_{i}_yaw_joint"
+    )
+
+    XML.SubElement(sensor, "force", site=f"leg_{i}_foot", name=f"leg_{i}_foot_fsr")
+
+
+# Save the MJCF MXL for the robot:
+XML.indent(robot)
+with open(consts.GENERATED_ROBOT_MJCF_XML_PATH, "wb") as file:
+    XML.ElementTree(robot).write(file, encoding="utf-8")
+del robot
+
+
+# Top-level scene declaration:
+scene = XML.Element("mujoco", model="eye-robot")
+
+
+# Focus on the center of the body. TODO: what's `extent`?
+XML.SubElement(
+    scene, "statistic", center=f"0 0 {consts.LENGTH_KNEE_TO_FOOT}", extent="0.6"
+)
+
+
+# Rendering settings:
+visual = XML.SubElement(scene, "visual")
+
+# Headlight (light from the active camera):
+XML.SubElement(
+    visual, "headlight", diffuse="0.6 0.6 0.6", ambient="0.3 0.3 0.3", specular="0 0 0"
+)
+
+# Haze at the render limit:
+XML.SubElement(visual, "rgba", haze="0.15 0.25 0.35 1")
+
+# Global camera orientation:
+XML.SubElement(visual, "global", azimuth="160", elevation="-20")
+
+
+# Textures & materials:
+asset = XML.SubElement(scene, "asset")
+
+# Sky texture:
 XML.SubElement(
     asset,
     "texture",
     type="skybox",
     builtin="gradient",
-    rgb1="0.5 0.5 0.5",
+    rgb1="0.3 0.5 0.7",
     rgb2="0 0 0",
-    width="32",
-    height="512",
-)
-XML.SubElement(
-    asset,
-    "texture",
-    name="body",
-    type="cube",
-    builtin="flat",
-    mark="cross",
-    width="128",
-    height="128",
-    rgb1="0.6 0.6 0.6",
-    rgb2="0.6 0.6 0.6",
-    markrgb="1 1 1",
-    random="0.01",
-)
-XML.SubElement(
-    asset,
-    "material",
-    name="body",
-    texture="body",
-    texuniform="true",
-    rgba="0.6 0.6 0.6 1",
-)
-XML.SubElement(
-    asset,
-    "texture",
-    name="grid",
-    type="2d",
-    builtin="checker",
     width="512",
-    height="512",
-    rgb1="0.7 0.7 0.7",
-    rgb2="0.8 0.8 0.8",
+    height="3072",
 )
+
+# Ground plane/floor grid texture:
+XML.SubElement(
+    asset,
+    "texture",
+    type="2d",
+    name="groundplane",
+    builtin="checker",
+    mark="edge",
+    rgb1="0.2 0.3 0.4",
+    rgb2="0.1 0.2 0.3",
+    markrgb="0.8 0.8 0.8",
+    width="300",
+    height="300",
+)
+
+# Ground plane/floor material:
 XML.SubElement(
     asset,
     "material",
-    name="grid",
-    texture="grid",
-    texrepeat="1 1",
+    name="groundplane",
+    texture="groundplane",
     texuniform="true",
-    reflectance=".2",
+    texrepeat="5 5",
+    reflectance="0.2",
 )
 
-# Defaults:
-default = XML.SubElement(mujoco, "default")
 
-# Not sure what this does yet:
-XML.SubElement(
-    default,
-    "position",
-    # ctrlrange="-1 1",
-    # ctrllimited="true",
-    forcerange=f"{-consts.SERVO_TORQUE_NM} {consts.SERVO_TORQUE_NM}",
-    forcelimited="true",
-    dampratio="1.0",
-    inheritrange="1",
-)
+# Then use the textures & materials we just defined on physical things:
+worldbody = XML.SubElement(scene, "worldbody")
 
-# Defaults for all bodies:
-body_default = XML.SubElement(default, "default", **{"class": "body"})
+# Sunlight:
+XML.SubElement(worldbody, "light", pos="0 0 1.5", dir="0 0 -1", directional="true")
 
-# Defaults for all physical parts of the body:
-XML.SubElement(
-    body_default,
-    "geom",
-    type="capsule",
-    condim="1",
-    friction="0.7",
-    solimp=".9 .95 .001",
-    solref=".005 1",
-    material="body",
-    rgba="0 0 0 1",
-    # group="1",
-    size=f"{consts.LEG_DIAMETER}",
-    contype="0",
-    conaffinity="0",
-)
-
-# Defaults for all joints in the body:
-XML.SubElement(
-    body_default,
-    "joint",
-    type="hinge",
-    damping="0.0005",
-    stiffness="0.001",
-    limited="true",
-    armature=".01",
-    solimplimit="0 .99 .01",
-)
-
-# Nesting doll for everything in the world (that isn't metadata):
-worldbody = XML.SubElement(mujoco, "worldbody")
-
-contact = XML.SubElement(mujoco, "contact")
-
-# Add the ground plane/floor:
+# Sunlight:
 XML.SubElement(
     worldbody,
     "geom",
     name="floor",
-    size=f"0 0 {consts.inches(2)}",
+    pos="0 0 -0.05",
+    size="0 0 0.05",
     type="plane",
-    material="grid",
-    condim="3",
-)
-
-XML.SubElement(
-    worldbody,
-    "light",
-    name="spotlight",
-    mode="targetbodycom",
-    target=consts.ROOT_BODY,
-    diffuse=".8 .8 .8",
-    specular="0.3 0.3 0.3",
-    pos="0 -6 4",
-    cutoff="30",
-)
-
-# # Light above:
-# XML.SubElement(
-#     worldbody,
-#     "light",
-#     name="top",
-#     pos=f"0 0 {8 * consts.EYE_RADIUS}",
-#     mode="trackcom",
-# )
-#
-# # And an off-axis spotlight on the torso:
-# XML.SubElement(
-#     worldbody,
-#     "light",
-#     name="spotlight",
-#     mode="targetbodycom",
-#     target=consts.ROOT_BODY,
-#     diffuse=".8 .8 .8",
-#     specular="0.3 0.3 0.3",
-#     pos="0 -6 4",
-#     cutoff="30",
-# )
-
-torso = XML.SubElement(
-    worldbody,
-    "body",
-    name=consts.ROOT_BODY,
-    pos=f"0 0 {1.5 * consts.LOWER_LEG_LENGTH}",
-    childclass="body",
-)
-XML.SubElement(torso, "light", name="top", pos="0 0 2", mode="trackcom")
-XML.SubElement(
-    torso, "camera", name="back", pos="-3 0 1", xyaxes="0 -1 0 1 0 2", mode="trackcom"
-)
-XML.SubElement(
-    torso, "camera", name="side", pos="0 -3 1", xyaxes="1 0 0 0 1 2", mode="trackcom"
-)
-XML.SubElement(torso, "freejoint", name="root")
-
-XML.SubElement(
-    torso,
-    "geom",
-    name=consts.ROOT_BODY,
-    type="sphere",
-    size=f"{consts.EYE_RADIUS}",
-    mass=f"{consts.SPHERE_MASS + 9 * consts.SERVO_MASS * (1.0 + consts.EXTRA_SPHERE_MASS_PERCENTAGE_IM_FORGETTING)}",
-    rgba="1 1 1 1",
-)
-if consts.PUPIL_SIZE_RELATIVE is not None:
-    XML.SubElement(
-        torso,
-        "geom",
-        name="pupil",
-        type="sphere",
-        pos=f"0 {-(1 + consts.PUPIL_SIZE_PROTRUSION - consts.PUPIL_SIZE_RELATIVE) * consts.EYE_RADIUS} 0",
-        size=f"{consts.PUPIL_SIZE_RELATIVE * consts.EYE_RADIUS}",
-        mass="0",
-        rgba="0 0 1 1",
-    )
-XML.SubElement(
-    torso,
-    "site",
-    name="imu",
-)
-XML.SubElement(
-    torso,
-    "camera",
-    name="egocentric",
-    pos=f"{consts.EYE_RADIUS} 0 0",
-    xyaxes="0 -1 0 .1 0 1",
-    fovy="80",
+    material="groundplane",
 )
 
 
-contact = XML.SubElement(mujoco, "contact")
+# Save the MJCF MXL for the scene:
+XML.indent(scene)
+with open(consts.GENERATED_SCENE_MJCF_XML_PATH, "wb") as file:
+    XML.ElementTree(scene).write(file, encoding="utf-8")
+del scene
 
 
-sensor = XML.SubElement(mujoco, "sensor")
-
-XML.SubElement(sensor, "gyro", site="imu", name="gyro")
-# XML.SubElement(sensor, "velocimeter", site="imu", name="local_linvel")
-XML.SubElement(sensor, "accelerometer", site="imu", name="accelerometer")
-# XML.SubElement(sensor, "framepos", objtype="site", objname="imu", name="position")
-# XML.SubElement(sensor, "framezaxis", objtype="site", objname="imu", name="upvector")
-# XML.SubElement(
-#     sensor, "framexaxis", objtype="site", objname="imu", name="forwardvector"
-# )
-# XML.SubElement(
-#     sensor, "framelinvel", objtype="site", objname="imu", name="global_linvel"
-# )
-# XML.SubElement(
-#     sensor, "frameangvel", objtype="site", objname="imu", name="global_angvel"
-# )
-# XML.SubElement(sensor, "framequat", objtype="site", objname="imu", name="orientation")
+# Top-level declaration for the combined model:
+combined = XML.Element("mujoco", model="eye-robot")
+XML.SubElement(combined, "include", file=consts.GENERATED_SCENE_MJCF_XML_PATH)
+XML.SubElement(combined, "include", file=consts.GENERATED_ROBOT_MJCF_XML_PATH)
 
 
-actuator = XML.SubElement(mujoco, "actuator")
-
-
-keyframe = XML.SubElement(mujoco, "keyframe")
-XML.SubElement(keyframe, "key", name="home", qpos=" ".join(["0"] * 16))
-
-
-for i in range(consts.N_LEGS):
-    leg_mount = XML.SubElement(
-        torso,
-        "body",
-        name=f"leg mount #{i + 1}",
-        euler=f"0 0 {360.0 * i / consts.N_LEGS}",
-    )
-    leg = XML.SubElement(
-        leg_mount,
-        "body",
-        name=f"leg #{i + 1}",
-        pos=f"{consts.EYE_RADIUS} 0 0",
-    )
-    XML.SubElement(
-        leg,
-        "joint",
-        name=f"leg yaw joint #{i + 1}",
-        axis="0 0 1",
-        range=f"{consts.LEG_YAW_MIN_DEGREES} {consts.LEG_YAW_MAX_DEGREES}",
-    )
-    XML.SubElement(
-        leg,
-        "joint",
-        name=f"hip joint #{i + 1}",
-        axis="0 1 0",
-        range=f"{consts.HIP_MIN_DEGREES} {consts.HIP_MAX_DEGREES}",
-    )
-    XML.SubElement(
-        leg,
-        "geom",
-        name=f"upper leg #{i + 1}",
-        fromto=f"0 0 0 {consts.UPPER_LEG_LENGTH} 0 0",
-        mass=f"{consts.LEG_DENSITY * consts.UPPER_LEG_LENGTH}",
-    )
-    lower_leg = XML.SubElement(
-        leg,
-        "body",
-        name=f"lower leg #{i + 1}",
-        euler=f"0 90 0",
-        pos=f"{consts.UPPER_LEG_LENGTH} 0 0",
-    )
-    # XML.SubElement(
-    #     lower_leg,
-    #     "geom",
-    #     type="sphere",
-    #     name=f"knee #{i + 1}",
-    #     size=f"{consts.KNEE_DIAMETER}",
-    # )
-    XML.SubElement(
-        lower_leg,
-        "joint",
-        name=f"knee joint #{i + 1}",
-        axis="0 1 0",
-        range=f"{consts.KNEE_MIN_DEGREES} {consts.KNEE_MAX_DEGREES}",
-    )
-    XML.SubElement(
-        lower_leg,
-        "geom",
-        name=f"lower leg #{i + 1}",
-        fromto=f"0 0 0 {consts.LOWER_LEG_LENGTH} 0 0",
-        mass=f"{consts.LEG_DENSITY * consts.LOWER_LEG_LENGTH}",
-    )
-
-    foot = XML.SubElement(
-        lower_leg,
-        "body",
-        name=f"foot #{i + 1}",
-        pos=f"{consts.LOWER_LEG_LENGTH} 0 0",
-    )
-    XML.SubElement(
-        foot,
-        "site",
-        name=f"foot #{i + 1}",
-    )
-    XML.SubElement(
-        foot,
-        "geom",
-        type="sphere",
-        name=f"foot #{i + 1}",
-        size=f"{consts.FOOT_DIAMETER}",
-        mass=f"{consts.FOOT_CAP_MASS}",
-    )
-
-    XML.SubElement(sensor, "force", site=f"foot #{i + 1}", name=f"foot force #{i + 1}")
-    XML.SubElement(
-        sensor,
-        "framelinvel",
-        objtype="site",
-        objname=f"foot #{i + 1}",
-        name=f"foot #{i + 1}_global_linvel",
-    )
-    XML.SubElement(
-        sensor,
-        "framelinvel",
-        objtype="site",
-        objname=f"foot #{i + 1}",
-        name=f"foot #{i + 1}_pos",
-        reftype="site",
-        refname="imu",
-    )
-
-    XML.SubElement(
-        actuator,
-        "position",
-        name=f"hip servo #{i + 1}",
-        joint=f"hip joint #{i + 1}",
-    )
-    XML.SubElement(
-        actuator,
-        "position",
-        name=f"knee servo #{i + 1}",
-        joint=f"knee joint #{i + 1}",
-    )
-    XML.SubElement(
-        actuator,
-        "position",
-        name=f"leg yaw servo #{i + 1}",
-        joint=f"leg yaw joint #{i + 1}",
-    )
-
-    XML.SubElement(contact, "pair", geom1=f"foot #{i + 1}", geom2="floor")
-
-
-XML.indent(mujoco)
+# Save the MJCF MXL for the combined model:
+XML.indent(combined)
 with open(consts.GENERATED_MJCF_XML_PATH, "wb") as file:
-    XML.ElementTree(mujoco).write(file, encoding="utf-8")
+    XML.ElementTree(combined).write(file, encoding="utf-8")
+del combined
