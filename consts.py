@@ -87,8 +87,7 @@ PUPIL_SIZE_PROTRUSION = 0.05
 SERVO_TORQUE_NM = 5  # kg_cm(2.7)
 SERVO_KP = 21.1  # from <https://github.com/google-deepmind/mujoco/issues/1075>: see line <https://github.com/google-deepmind/mujoco_menagerie/blob/cfd91c5605e90f0b77860ae2278ff107366acc87/robotis_op3/op3.xml#L62>
 
-JOINT_SHITBALLS = 1
-JOINT_DAMPING = 1.084 / JOINT_SHITBALLS  # 1.084
+JOINT_DAMPING = 1.084
 JOINT_STIFFNESS = None
-JOINT_ARMATURE = 0.045 / JOINT_SHITBALLS  # 0.045
-JOINT_FRICTION_LOSS = 0.03 / JOINT_SHITBALLS  # 0.03
+JOINT_ARMATURE = 0.045
+JOINT_FRICTION_LOSS = 0.03
